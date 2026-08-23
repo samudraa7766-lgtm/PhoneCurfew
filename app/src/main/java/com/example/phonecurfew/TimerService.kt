@@ -46,21 +46,52 @@ class TimerService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun lockScreen() {
-        if (dpm.isAdminActive(adminComponent)) {
-            dpm.lockNow()
-        } else {
-            NotificationManagerCompat.from(this).notify(
-                2,
-                NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle("Timer finished")
-                    .setContentText("Please lock your phone manually.")
-                    .setSmallIcon(android.R.drawable.ic_lock_lock)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .build()
-            )
+    private fun lockScreenAndSuspendApps() {
+    if (dpm.isAdminActive(adminComponent)) {
+        // 1. Lock the screen
+        dpm.lockNow()
+
+        // 2. Suspend all user-installed packages except our own
+        val pm = packageManager
+        val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        val packagesToSuspend = ArrayList<String>()
+
+        for (app in packages) {
+            // Skip our own app
+            if (app.packageName == packageName) continue
+
+            // Suspend only user-installed apps (not system apps)
+            if ((app.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
+                packagesToSuspend.add(app.packageName)
+            }
         }
+
+        if (packagesToSuspend.isNotEmpty()) {
+            dpm.setPackagesSuspended(adminComponent, packagesToSuspend.toTypedArray(), true)
+        }
+
+        // Optional: Show a notification that apps are suspended
+        NotificationManagerCompat.from(this).notify(
+            3,
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Apps Suspended")
+                .setContentText("YouTube, Instagram, and other apps have been stopped.")
+                .setSmallIcon(android.R.drawable.ic_lock_lock)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .build()
+        )
+    } else {
+        // Fallback if admin is not active
+        NotificationManagerCompat.from(this).notify(
+            2,
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Timer finished")
+                .setContentText("Please lock your phone manually.")
+                .setSmallIcon(android.R.drawable.ic_lock_lock)
+                .build()
+        )
     }
+}
 
     private fun startForegroundNotification(minutes: Int) {
         createNotificationChannel()
