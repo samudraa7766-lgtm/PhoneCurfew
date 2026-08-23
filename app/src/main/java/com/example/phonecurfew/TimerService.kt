@@ -40,7 +40,7 @@ class TimerService : Service() {
             }
 
             override fun onFinish() {
-                lockScreenAndSuspendApps()   // <-- Correct method call
+                lockScreenAndSuspendApps()
                 stopForeground(true)
                 stopSelf()
             }
@@ -72,7 +72,7 @@ class TimerService : Service() {
                 dpm.setPackagesSuspended(adminComponent, packagesToSuspend.toTypedArray(), true)
             }
 
-            // 3. Kill any background processes of these apps
+            // 3. Kill background processes of suspended apps
             val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             for (pkg in packagesToKill) {
                 am.killBackgroundProcesses(pkg)
@@ -89,7 +89,6 @@ class TimerService : Service() {
                     .build()
             )
         } else {
-            // Fallback if admin is not active
             NotificationManagerCompat.from(this).notify(
                 2,
                 NotificationCompat.Builder(this, CHANNEL_ID)
