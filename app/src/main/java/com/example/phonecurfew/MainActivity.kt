@@ -5,7 +5,6 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -54,12 +53,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 checkAdminAndStart()
             }
-        }
-
-        // Optional: Unsuspend button
-        val btnUnsuspend = findViewById<Button>(R.id.btnUnsuspend)
-        btnUnsuspend.setOnClickListener {
-            unsuspendAllApps()
         }
     }
 
@@ -118,25 +111,5 @@ class MainActivity : AppCompatActivity() {
             startService(serviceIntent)
         }
         Toast.makeText(this, "Timer started for $minutes minute(s)", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun unsuspendAllApps() {
-        if (dpm.isAdminActive(adminComponent)) {
-            val pm = packageManager
-            val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            val packagesToUnsuspend = ArrayList<String>()
-            for (app in packages) {
-                if (app.packageName == packageName) continue
-                if ((app.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
-                    packagesToUnsuspend.add(app.packageName)
-                }
-            }
-            if (packagesToUnsuspend.isNotEmpty()) {
-                dpm.setPackagesSuspended(adminComponent, packagesToUnsuspend.toTypedArray(), false)
-                Toast.makeText(this, "Apps unsuspended", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(this, "Device Admin not active", Toast.LENGTH_SHORT).show()
-        }
     }
 }
